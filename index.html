@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Message Bus</title>
+    <meta charset="utf-8">
+    <style>
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Message Bus
+
+---
+
+# Agenda
+
+1. What is a Message Bus
+1. Architectures using Message Bus
+1. Message Bus Basics
+1. Different Message Bus Products
+1. RabbitMQ & Tutorial
+1. NServiceBus & Tutorial
+1. More complex RabbitMQ scenarios
+1. Apache Kafka
+
+???
+
+---
+
+# What is a message bus? 
+
+A __Message Bus__ is an additional messaging layer – a __router__ for messages.
+
+<br/>
+
+![:scale 30%](message-bus.gif)
+
+--
+
+Ensures that the __right message__ gets to the __right destination__.
+
+Helps you create __decoupled__ applications that are easier to maintain, extend, scale and test.
+
+???
+
+Hot thing in the modern web scale times.
+
+Easy to pass messages between applications.
+
+---
+
+# Terminology
+
+* Service Bus
+* Message Bus
+* Service Broker
+* Message Broker
+* Enterprise Service Bus (ESB)
+* Enterprise Application Integration (EAI)
+
+???
+
+* EAI is something big scale architects like to use. Framework for integrating to different systems.
+* ESB has a bad reputation in modern micro service times (too big)
+
+---
+
+# Terminology
+
+1. __Broker__ has its own central piece of software.
+1. __Bus__ has no software. Provides a common protocol, data model and command set.
+
+???
+
+* RabbitMQ and Kafka are a broker
+* NServiceBus is a bus
+ * No installation but required lot's of configuration
+ * Different messaging channels etc.
+
+---
+
+# ESB
+
+__Enterprise Service Bus__ is often combined with __Service Oriented Architecture__. 
+
+--
+
+__SOA__ is an architectural pattern where you have multiple services instead of a monolith.
+
+It does not prescribe any implementation details.
+
+__SOA__ exposes _services_ in a coarse (__SOAP__) or fine (__RESTFul__) grained manner. 
+
+It is a lightweight interaction between systems that usually speak _HTTP_, _TCP_, ... (also implementation detail).
+
+???
+
+* Extremely hard to define what SOA actually is.
+* Pretty much norm in Software Development, that defining anything is extremely hard
+* Everything has multiple definitions
+* No one agrees on anything
+
+---
+
+# SOA vs Microservice architecture
+
+* What is the difference? 
+  * __SOA__ is complicated (old)
+  * __Microservice__ is simple (new)
+
+--
+
+One common definition is that __SOA__ usually deployed all at once. __Microservices__ independently.
+
+![:scale 60%](soa-vs-microservices.png)
+
+__SOA__ usually had a __Service Bus__, __Microservices__ not (sometimes yes).
+
+???
+
+* Same problem with all modern software development, as new good, old bad
+* SOA XML, Microsoervices JSON? (WTF)
+* SOA people were too much architect astronauts
+
+---
+
+# SOA vs Microservice architecture
+
+Microservices have same problems as SOA, so __Bus__ has been replaced with other solutions, e.g.
+* Service Discovery
+* Service Mesh
+* (API Gateway)
+
+---
+
+# REST vs SOAP
+
+* REST (_JSON over HTTP_) is lightweight
+* SOAP is heavy
+
+### Differences
+
+* SOAP had WSDL, REST has nothing
+ * Now has Swagger (OpenAPI)
+* SOAP had XML schemas, REST has plain JSON
+ * Now has JSON schema etc. for message validation
+* SOAP had HTTP, SMTP, TCP..., REST has HTTP (usually)
+
+---
+
+### REST vs SOAP
+
+For consumers there is not much difference, if producer creates the models for the service.
+
+```
+2000: Write 100s of lines of XML to "declaratively" configure your servlets and EJBs
+2018: Write 100s of lines of YAML to "declaratively" configure your microservices
+
+At least XML had schemas...
+```
+
+https://twitter.com/dr_c0d3/status/1040092903052378112?s=19
+
+???
+
+* E.g. Clients created from the Swagger definitions
+
+---
+
+### Service Discovery
+
+![:scale 60%](service-discovery.png)
+
+???
+
+* This is extremely recommended
+ * Release variables are also good, but now as good as this
+
+---
+
+### Service Mesh
+
+A service mesh is a dedicated infrastructure layer for handling service-to-service communication. 
+
+It’s responsible for the reliable delivery of requests through the complex topology of services.
+
+![:scale 60%](service-mesh-diagram.png)
+
+???
+
+* Sounds pretty much same as service bus
+
+---
+
+### Service Mesh - another example
+
+__Plain Microservices__
+
+![:scale 50%](service-mesh-before.png)
+
+--
+
+__With Service Mesh__
+
+![:scale 50%](service-mesh-after.png)
+
+???
+
+* All communication with Service Mesh infrastructure
+ * Not much different than commonly used now with Swagger generated clients
+ * Client could use some Service Mesh communication
+ * NOTE: SOA also created clients "automatically"
+---
+
+### API Gateway
+
+API Gateway can have a __Service Mesh__ built in.
+
+![:scale 40%](api-gateway.jpg)
+![:scale 40%](backends-api-gateway.png)
+
+---
+
+# Why to use?
+
+### Olden times IT:
+
+> _"Nobody ever got fired for buying IBM."_
+
+### Modern Software Architects:
+
+> _"Nobody ever got fired for choosing a message bus."_
+
+???
+
+* Safe starting point for any system is a message bus
+* Using Kafka that persists all messages even safer
+
+---
+
+# Why to use?
+
+* Easy routing
+ * Bus is the only endpoint
+* Send single message to multiple endpoints
+* Persistence
+* Resend
+* Asynchronous
+ * No need to wait for result
+* Monitoring in-built (Brokers)
+* Scale / Decouple / Maintain / Test
+
+???
+
+* Service Mesh still pretty new (02/2018 and still is 01/2019)
+
+---
+
+# Why not to use?
+
+Same reasons as with all architectures and patterns:
+
+* If not really needed, then adds unnecessary complexity 
+ * More complexity for programmers
+ * More complexity for operations
+* Request / response handling is pretty complex
+ * If library doesn't provide, then needs own wrappers
+* Easy to implement bad messaging processes
+ * Designing good processes is hard
+
+???
+
+* Req/response
+ * e.g. How can client know the the message was processed and if there was an error what was it?
+
+---
+
+# Basic Message Bus Jargon
+
+* Producer
+ * Application that sends messages
+* Consumers
+ * Application that processes messages
+* Exchange
+ * Endpoint that directs messages to correct location
+* Queue
+ * Data structure where messages are stored (FIFO)
+* Partition
+ * Data structure where messages are stored (Read with offset)
+* Dead Letter
+ * Not valid message or message that can't be processed for some reason
+
+![:scale 60%](rabbitmq-broker.png)
+
+???
+
+* Dead Letter: rejected, not ok, queue full, ttl expired
+* Different systems have a different way to handle these
+* Acknowledgements, supported
+
+---
+
+### Products
+
+* RabbitMQ
+* Kafka
+* Redis Pub/Sub
+* AWS 
+  * Simple Queue
+  * Message Queue
+  * Message Broker - Pub/Sub
+  * ...
+* Azure
+  * Service Bus
+* SQL Server Service Broker
+* NServiceBus
+* MassTransit
+* ZeroMQ
+* MSMQ
+
+???
+
+* Some are .NET specific
+---
+
+# RabbitMQ
+
+![:scale 70%](rabbitmq-prod-consumers.png)
+
+--
+
+<br/>
+<br/>
+
+![:scale 70%](rabbitmq-pubsub.png)
+
+---
+
+# RabbitMQ
+
+![:scale 70%](rabbitmq-prod-consumers2.png)
+
+---
+
+# Apache Kafka
+
+![:scale 100%](kafka-producer.png)
+
+---
+
+# Azure Service Bus
+
+![:scale 100%](azure-service-bus.jpg)
+
+---
+
+# Basics (RabbitMQ)
+
+Simplified overview:
+
+1. Consumers maintain persistent TCP connections with RabbitMQ and declare which queue(s) they consume
+1. Publishers send messages to exchanges
+1. Exchanges route messages to queues and other exchanges
+1. RabbitMQ sends acknowledgements to publishers on message receipt
+1. RabbitMQ pushes messages to consumers
+1. Consumers send acknowledgements of success/failure
+1. Messages are removed from queues once consumed successfully
+
+![:scale 80%](rabbitmq-routing.png)
+
+???
+
+* Exchanges and queues live inside RabbitMQ
+* Consumers and Producers are "user code" / servies
+---
+
+# RabbitMQ Routing
+
+* Fanout
+ * Routes to all queues and exchanges that have a binding to the exchange. The standard pub sub model.
+* Direct
+ * Routes messages based on a Routing Key that the message carries with it, set by the publisher.
+* Topic
+ * Routes messages based on a routing key, but allows wildcard matching.
+
+![:scale 60%](rabbitmq-routing.png)
+
+---
+
+# RabbitMQ Tutorial
+
+#### Start RabbitMQ with Docker
+
+Use image with Management plugin (rabbitmq:3-management) https://hub.docker.com/_/rabbitmq/
+
+```sh
+$ docker run -d --hostname my-rabbit --name some-rabbit -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+```
+
+#### Open Management
+
+http://localhost:15672
+
+`guest/guest`
+
+---
+
+# RabbitMQ Tutorial
+
+GitHub repo: 
+
+https://github.com/rabbitmq/rabbitmq-tutorials
+
+C# code:
+
+https://github.com/rabbitmq/rabbitmq-tutorials/tree/master/dotnet-visual-studio
+
+Tutorial:
+
+https://www.rabbitmq.com/getstarted.html
+
+C# API Guide:
+
+https://www.rabbitmq.com/dotnet-api-guide.html
+
+---
+
+# RabbitMQ Tutorial
+
+#### [Tutorial 1: "Hello World!"](http://www.rabbitmq.com/tutorial-one-dotnet.html)
+
+* Send a simple message to queue and process it
+* Uses __Direct__ routing to `hello` queue
+
+![:scale 70%](rabbitmq-queue.png)
+
+???
+
+```sh
+.\1_Send\bin\Debug\1_Send.exe
+.\1_Receive\bin\Debug\1_Receive.exe
+```
+
+???
+
+* Show how to use RabbitMQ in Web API
+  * https://github.com/ttu/chat-server/blob/4318ffa5997bd35f0e67b3673fc5b4f48b2a1c26/src/ChatServer/Startup.cs#L45
+---
+
+# RabbitMQ Tutorial
+
+#### [Tutorial 2: Work Queues](http://www.rabbitmq.com/tutorial-two-dotnet.html)
+
+* Distributing tasks among workers
+* Use Round-robin dispatching
+* Use __Direct__ routing to `task_queue` queue
+
+![:scale 70%](rabbitmq-workqueue.png)
+
+???
+
+```sh
+.\2_Worker\bin\Debug\2_Worker.exe
+.\2_Worker\bin\Debug\2_Worker.exe
+
+.\2_NewTask\bin\Debug\2_NewTask.exe
+```
+
+---
+
+# RabbitMQ Tutorial
+
+#### [Tutorial 3: Publish/Subscribe](http://www.rabbitmq.com/tutorial-three-dotnet.html)
+
+* Sending messages to many consumers at once
+* Uses __Fanout__ routing with exchange
+
+![:scale 70%](rabbitmq-pubsub.png)
+
+???
+
+```sh
+.\3_EmitLog\bin\Debug\3_EmitLog.exe "Why hello all!"
+
+.\3_ReceiveLogs\bin\Debug\3_ReceiveLogs.exe
+.\3_ReceiveLogs\bin\Debug\3_ReceiveLogs.exe
+```
+
+---
+
+# RabbitMQ Tutorial
+
+#### [Tutorial 4: Routing](http://www.rabbitmq.com/tutorial-four-dotnet.html)
+
+* Send a bunch of messages and process those with multiple consumers
+* Uses __Direct__ routing with exchange
+
+![:scale 70%](rabbitmq-routing.png)
+
+???
+
+```sh
+.\4_ReceiveLogsDirect\bin\Debug\4_ReceiveLogsDirect.exe "info" "debug" "error"
+.\4_ReceiveLogsDirect\bin\Debug\4_ReceiveLogsDirect.exe "error"
+
+.\4_EmitLogDirect\bin\Debug\4_EmitLogDirect.exe "info" "Testing info message"
+.\4_EmitLogDirect\bin\Debug\4_EmitLogDirect.exe "error" "Something bad just happened"
+```
+
+---
+
+# RabbitMQ Tutorial
+
+#### [Tutorial 5: Topics](http://www.rabbitmq.com/tutorial-five-dotnet.html)
+
+* Send a bunch of messages and process those with multiple consumers
+* Uses __Topic__ with exchange
+
+![:scale 70%](rabbitmq-topics.png)
+
+???
+
+```sh
+# All messages
+.\5_ReceiveLogsTopic\bin\Debug\5_ReceiveLogsTopic.exe "#"
+
+# All statring kern
+.\5_ReceiveLogsTopic\bin\Debug\5_ReceiveLogsTopic.exe "google.*"
+.\5_ReceiveLogsTopic\bin\Debug\5_ReceiveLogsTopic.exe "*.info"
+
+.\5_EmitLogTopic\bin\Debug\5_EmitLogTopic.exe "google.debug" "hello from Google debug"
+.\5_EmitLogTopic\bin\Debug\5_EmitLogTopic.exe "abba.all" "Hello from Abba all"
+.\5_EmitLogTopic\bin\Debug\5_EmitLogTopic.exe "abba.info" "Hello from Abba info"
+```
+
+---
+
+# RabbitMQ Tutorial
+
+#### [Tutorial 6: RPC](http://www.rabbitmq.com/tutorial-six-dotnet.html)
+
+* Send a bunch of messages and process those with multiple consumers
+
+![:scale 70%](rabbitmq-rpc.png)
+
+???
+
+```sh
+.\6_RPCServer\bin\Debug\6_RPCServer.exe
+.\6_RPCCLient\bin\Debug\6_RPCCLient.exe
+```
+
+---
+
+# NServiceBus
+
+> NServiceBus, the heart of the system, is a messaging and workflow framework that helps create distributed systems that are scalable, reliable and easy to modify. 
+
+---
+
+# Why NServiceBus
+
+* Supports various messaging patterns
+* Handles long runnign processes (Sagas)
+* Quarantees _'at least once'_ and _'exactly once'_ delivery
+* Automatic Retry
+* Error Queue and Manual inspection/resend
+* No need to install specific server
+* Can be used with different queueing technologies
+* Provides more functionality out of the box
+* Extensible
+* Code based
+
+???
+
+* Move from local MSMQ to e.g. Azure relatively simple
+* If plain broker is used developers need to develop lots of functionality
+ * https://stackoverflow.com/a/38125057/1292530
+
+---
+
+# Tutorial: NServiceBus
+
+https://docs.particular.net/tutorials/nservicebus-step-by-step/
+
+<br/>
+<br/>
+
+![:scale 70%](nservicebus-tutorial.svg)
+
+---
+
+# Tutorial: NServiceBus Sagas
+
+_Sagas a message-driven state machine, or a collection of message handlers that persist shared state_
+
+https://docs.particular.net/tutorials/nservicebus-sagas/1-getting-started/
+
+<br/>
+
+![:scale 60%](nservicebus-saga.png)
+
+???
+
+* Saga pattern is also commonly used
+  * Microservices Saga: https://microservices.io/patterns/data/saga.html
+  * Redux Saga
+---
+
+# Tutorial: NServiceBus RabbitMQ transport
+
+https://docs.particular.net/transports/rabbitmq/
+
+### NOTES
+* Use `UseConventionalRoutingTopology`
+* Use default connection string: `"host=localhost;username=guest;password=guest"`
+* Sagas need persistance (`LearningPersistence` is fine)
+* Use `endpointConfiguration.EnableInstallers()` to autmatically create queues
+
+???
+
+* https://docs.particular.net/persistence/
+* https://docs.particular.net/transports/queuecreation
+* https://docs.particular.net/nservicebus/operations/installers
+---
+
+# RabbitMQ scenarios - Scatter Gather
+
+> The Scatter-Gather routes a request message to the a number of recipients. It then uses an Aggregator to collect the responses and distill them into a single response message.
+
+[enterpriseintegrationpatterns.com](https://www.enterpriseintegrationpatterns.com/patterns/messaging/BroadcastAggregate.html)
+
+![:scale 70%](rabbitmq-scatter-gatherer.jpg)
+
+???
+
+* Common patterns that are not only message bus related
+---
+
+# RabbitMQ scenarios - Client Specific Workers
+
+![:scale 80%](rabbitmq-client-specific-workers.jpg)
+
+---
+
+# Apache Kafka
+
+* Kafka is a distributed, replicated commit log
+* Kafka does not have the concept of a queue
+ * Messages are stored in partitioned, append only commit logs which are called __Topics__
+
+![:scale 70%](kafka-broker.png)
+
+???
+
+* The concept of a log is the principal killer feature of Kafka.
+* ZooKeeper is a centralized service for maintaining configuration information, naming, providing distributed synchronization, and providing group services
+* Other similar products
+  * Azure Event Hub
+  * AWS Kinesis
+---
+
+# Topics, Partitions and Consumers
+
+* __Topic__ can have one or more __partitions__
+ * Partition is a separate data file which guarantees message ordering
+* One partition can't support competing consumers (multiple instance of same application)
+* Partition can support multiple different consumers
+* If __Topic__ has multiple __partitions__, Kafka uses round robin delivery 
+
+![:scale 50%](kafka-partitions.png)
+
+---
+
+# Consumer Groups
+
+* Same type of consumers can be added to a __Consumer group__
+* Each consumer in the group requires an __own partition__
+ * Consumers can listen to multiple partitions
+ * Partitions are reassigned automatically if new consumers appear
+* Producer can also define index of partition where messages are sent
+* When new consumer starts to listen topic, it will start from offset 0
+* Offset is stored to Kafka or told by consumer in manual mode
+
+<br/>
+
+![:scale 70%](kafka-rebalancing.png)
+
+???
+
+* Kafka recommends that all topics are set up manually.
+* Partitions need to be created manually.
+
+---
+
+# Kafka vs RabbitMQ
+
+* RabbitMQ
+ * More complex routing possibilities
+ * Knows state of Consumerd/Acknowledgments messages
+ * Request/reply, and publish/subscribe
+ * Better Management
+* Kafka
+ * Can handle lots of data (100k/sec vs RabbitMQ 20k/sec)
+ * Replay
+ * Should be used only for streaming, not for messaging
+ 
+---
+
+# Apache Kafka
+
+### Run with Docker
+
+```ps
+$ docker run -p 2181:2181 -p 9092:9092 --env ADVERTISED_HOST=localhost --env ADVERTISED_PORT=9092 --name spotify-kafka spotify/kafka
+```
+
+### Management
+
+Use http://www.kafkatool.com/
+
+TODO: Fix container communication
+```sh
+$ docker run -p 2181:2181 -p 9092:9092 -p 9000:9000 --env ADVERTISED_HOST=localhost --env ADVERTISED_PORT=9092 --name spotify-kafka spotify/kafka
+$ docker run -it --rm --net=container:spotify-kafka -e ZK_HOSTS="localhost:9092" -e APPLICATION_SECRET=letmein sheepkiller/kafka-manager
+```
+
+???
+
+* $ docker run -it --rm  -p 9000:9000 --net=container:spotify-kafka -e ZK_HOSTS="localhost:9092" -e APPLICATION_SECRET=letmein sheepkiller/kafka-manager
+
+---
+
+# Apache Kafka Tutorial
+
+Create Producer and Consumer:
+
+https://github.com/confluentinc/confluent-kafka-dotnet
+
+Check producer and consumer from examples in the GitHub repo
+
+NOTE: Create Topic and partitions manually, as by default only single partition for the topic is created
+
+```sh
+$ docker exec -it spotify-kafka /bin/bash
+$ ./opt/kafka_2.11-0.10.1.0/bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 2 --topic best-topic
+```
+
+---
+
+# Apache Kafka Tutorial
+
+Start producer and consumers:
+
+```sh
+# Start producer
+dotnet KafkaProducer\bin\Debug\netcoreapp2.2\KafkaProducer.dll
+
+# Star consumers
+dotnet KafkaConsumer\bin\Debug\netcoreapp2.2\KafkaConsumer.dll "my-group-1"
+dotnet KafkaConsumer\bin\Debug\netcoreapp2.2\KafkaConsumer.dll "my-group-2"
+.\KafkaClient\bin\Debug\KafkaClient.exe "my-group-1"
+.\KafkaClient\bin\Debug\KafkaClient.exe "my-group-2"
+
+# Later start 2 consumers more
+dotnet KafkaConsumer\bin\Debug\netcoreapp2.2\KafkaConsumer.dll "my-group-3"
+dotnet KafkaConsumer\bin\Debug\netcoreapp2.2\KafkaConsumer.dll "my-group-2"
+.\KafkaClient\bin\Debug\KafkaClient.exe "my-group-3"
+.\KafkaClient\bin\Debug\KafkaClient.exe "my-group-2"
+```
+
+???
+
+* "my-group-3" will get all messages from the beginning
+* "my-group-2" started later will take one partition from the first consumer
+ * Messages are distributed almost round robin
+
+---
+
+# Kafka / Azure Event hub / Commit log
+
+* Designed to handle very large quantities of small messages driven by events
+
+--
+
+* Almost every common IT use case
+  * Driven by streams of events each producing some data
+  * Consumed by downstream systems
+
+--
+
+* Example Event streams:
+  * In a retail system contain orders, shipments, returns etc. 
+  * A bank account processes debits and credits. 
+  * Financial systems process stock ticks, orders, etc. 
+  * Web sites have streams of page views, clicks, and so on. 
+  * Every HTTP request a web server receives is an event. 
+  * An RDBMS database is the result of a series of transactions which are events. 
+  
+--
+
+
+* Any business can be thought of as a collection of producer systems generating events (hence data)
+* Consumer systems which use that data by either transforming it (hence creating derived streams of data)
+
+???
+
+* Consumed e.g. Stream Analytics
+---
+
+# Redis Pub/Sub
+
+Code eaxmple from http://taswar.zeytinsoft.com/redis-pub-sub/
+
+```cs
+var redis = RedisStore.RedisCache;
+ 
+var sub = redis.Multiplexer.GetSubscriber();            
+
+sub.Subscribe("test", (channel, message) => {
+    Console.WriteLine("Got notification: " + (string)message);
+});
+ 
+var pub = redis.Multiplexer.GetSubscriber();
+
+//pubish to test channel a message
+var count = pub.Publish("test", "Hello there I am a test message");
+Console.WriteLine($"Number of listeners for test {count}");
+```
+
+--
+
+### Run Redis with Docker
+
+```sh
+$ docker run -d -p 6379:6379 --name some-redis redis
+```
+
+https://hub.docker.com/_/redis/
+
+???
+
+* Simple
+
+---
+
+# Messaging Patterns & ZeroMQ
+
+Advanced topic:
+
+http://zguide.zeromq.org/
+
+???
+
+Check Request/Response aka Pirate patterns
+
+---
+
+# Messaging inside applications
+
+Messaging is also a common way to send messages inside applications.
+
+Usually called _Message Bus_ or _Event Aggreator_.
+
+Exteremly simple implementation (not for _production_):
+
+```cs
+public interface IMessageBus
+{
+    void Publish<T>(string topic, T message);
+
+    void Subscribe<T>(string topic, Action<T> handler);
+}
+```
+
+---
+
+```cs
+public class MessageBus : IMessageBus
+{
+    public ConcurrentDictionary<string, ConcurrentBag<dynamic>> _subscriptions = new ConcurrentDictionary<string, ConcurrentBag<dynamic>>();
+
+    public void Publish<T>(string topic, T message)
+    {
+        if (_subscriptions.ContainsKey(topic))
+        {
+            foreach (var action in _subscriptions[topic])
+            {
+                // T message should be cloned if it is a reference type, so data can't be changed after new thread is created
+                Task.Run(() => { action(message); });
+            };
+        }
+    }
+
+    public void Subscribe<T>(string topic, Action<T> handler)
+    {
+        if (!_subscriptions.ContainsKey(topic))
+            _subscriptions.TryAdd(topic, new ConcurrentBag<dynamic>());
+
+        _subscriptions[topic].Add(handler);
+    }
+}
+```
+
+Proper small implementation __TinyMessenger__:
+
+https://github.com/grumpydev/TinyMessenger
+
+???
+
+* Using e.g. Redis Pub/Sus is also common iside applications.
+* Small implementation is also pretty large
+ * Threading
+ * Memory handling
+
+ ---
+# References
+
+* https://www.rabbitmq.com/getstarted.html
+* http://zguide.zeromq.org/page:all
+* https://dzone.com/articles/microservices-vs-soa-is-there-any-difference-at-al
+* https://blog.buoyant.io/2017/04/25/whats-a-service-mesh-and-why-do-i-need-one/
+* https://www.nginx.com/blog/service-discovery-in-a-microservices-architecture/
+* https://microservices.io/patterns/apigateway.html
+* https://jack-vanlightly.com/blog/2017/12/4/rabbitmq-vs-kafka-part-1-messaging-topologies
+* https://docs.particular.net/tutorials/nservicebus-step-by-step/
+* https://medium.com/ingeniouslysimple/how-did-we-get-to-service-meshes-682e1e3d6327
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js">
+    </script>
+    <script>
+      remark.macros.scale = function (percentage) {
+        var url = this;
+        return '<div style="text-align: center;"><img src="' + url + '" style="width: ' + percentage + '" /></div>';
+      };
+
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
